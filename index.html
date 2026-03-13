@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Katalog Koleksi</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+        .item { border: 1px solid #ccc; padding: 10px; text-align: center; cursor: pointer; }
+        .item img { width: 100%; height: 150px; object-fit: cover; }
+        .detail { margin-top: 10px; font-size: 0.9em; color: #555; }
+        .footer { margin-top: 30px; border-top: 1px solid #ccc; padding-top: 10px; font-size: 0.9em; }
+        .fortune { background: #f0f0f0; padding: 10px; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>Katalog Koleksi</h1>
+    <div class="grid" id="katalog"></div>
+
+    <div class="footer">
+        <h3>Fortunes:</h3>
+        <div id="fortune-edge" class="fortune">Memuat fortune edge...</div>
+        <div id="fortune-backend" class="fortune">Memuat fortune backend...</div>
+        <p><small>*Klik gambar untuk melihat detail</small></p>
+    </div>
+
+    <script>
+        // Fungsi untuk memuat daftar koleksi
+        async function loadKatalog() {
+            const res = await fetch('/api/get-koleksi');
+            const data = await res.json();
+            const grid = document.getElementById('katalog');
+            grid.innerHTML = '';
+            data.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'item';
+                div.innerHTML = `
+                    <img src="${item.path}" alt="${item.judul}" loading="lazy">
+                    <h3>${item.judul}</h3>
+                    <div class="detail" id="detail-${item.id}" style="display:none;">
+                        <p>Pencipta: ${item.pencipta}</p>
+                        <p>Tahun: ${item.tahun}</p>
+                        <p>Harga: Rp${item.harga.toLocaleString()}</p>
+                    </div>
+                `;
+                div.addEventListener('click', () => toggleDetail(item.id));
+                grid.appendChild(div);
+            });
+        }
+
+        // Fungsi untuk toggle detail (memanggil API get-detail)
+        async function toggleDetail(id) {
+            const detailDiv = document.getElementById(`detail-${id}`);
+            if (detailDiv.style.display === 'none') {
+                // Jika belum ada data detail, ambil dari API
+                if (!detailDiv.hasAttribute('data-loaded')) {
+                    const res = await fetch(`/api/get-detail?id=${id}`);
+                    const data = await res.json();
+                    detailDiv.innerHTML = `
+                        <p>Pencipta: ${data.pencipta}</p>
+                        <p>Tahun: ${data.tahun}</p>
+                        <p>Harga: Rp${data.harga.toLocaleString()}</p>
+                    `;
+                    detailDiv.setAttribute('data-loaded', 'true');
+                }
+                detailDiv.style.display = 'block';
+            } else {
+                detailDiv.style.display = 'none';
+            }
+        }
+
+        // Memuat fortune dari edge dan backend
+        async function loadFortunes() {
+            // Edge fortune
+            const edgeRes = await fetch('/api/fortune-edge');
+            const edgeData = await edgeRes.json();
+            document.getElementById('fortune-edge').innerText = 
+                `${edgeData.source}: ${edgeData.fortune} (${new Date(edgeData.timestamp).toLocaleTimeString()})`;
+
+            // Backend fortune
+            const backendRes = await fetch('/api/fortune');
+            const backendData = await backendRes.json();
+            document.getElementById('fortune-backend').innerText = 
+                `${backendData.source}: ${backendData.fortune}`;
+        }
+
+        // Jalankan semua
+        loadKatalog();
+        loadFortunes();
+    </script>
+</body>
+</html>

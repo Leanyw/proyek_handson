@@ -1,0 +1,32 @@
+{
+  "version": 2,
+  "headers": [
+    {
+      "source": "/koleksi/(.*)\\.(jpg|jpeg|png|gif|webp)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=100, s-maxage=300"
+        }
+      ]
+    },
+    {
+      "source": "/koleksi/(.*)\\.(mp4|mov|avi)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
+        }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
+        }
+      ]
+    }
+  ]
+}
