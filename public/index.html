@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Koleksi Foto Saya</title>
+
+<style>
+
+body{
+    font-family: Arial, sans-serif;
+    background:#f5f5f5;
+    margin:0;
+    padding:40px;
+    text-align:center;
+}
+
+h1{
+    font-size:40px;
+    margin-bottom:40px;
+}
+
+/* GRID */
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(320px,1fr));
+    gap:40px;
+    max-width:900px;
+    margin:auto;
+}
+
+/* CARD */
+.item{
+    background:white;
+    border-radius:15px;
+    padding:20px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    cursor:pointer;
+    transition:transform 0.2s;
+}
+
+.item:hover{
+    transform:translateY(-5px);
+}
+
+/* IMAGE */
+.item img{
+    width:100%;
+    height:220px;
+    object-fit:cover;
+    border-radius:12px;
+}
+
+/* JUDUL */
+.item h3{
+    margin:15px 0;
+    font-size:22px;
+}
+
+/* DETAIL */
+.detail{
+    background:#e8e2d9;
+    padding:12px;
+    border-radius:8px;
+    text-align:left;
+    font-size:14px;
+    display:none;
+}
+
+.detail p{
+    margin:4px 0;
+}
+
+/* FOOTER */
+.footer{
+    margin-top:50px;
+}
+
+.fortune{
+    background:#eee;
+    padding:10px;
+    margin:5px auto;
+    max-width:400px;
+    border-radius:5px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>Koleksi Foto Saya</h1>
+
+<div class="grid" id="katalog"></div>
+
+<div class="footer">
+    <h3>Fortunes</h3>
+    <div id="fortune-edge" class="fortune">Memuat fortune edge...</div>
+    <div id="fortune-backend" class="fortune">Memuat fortune backend...</div>
+</div>
+
+<script>
+
+async function loadKatalog(){
+    const res = await fetch('/api/get-koleksi');
+    const data = await res.json();
+
+    const grid = document.getElementById('katalog');
+    grid.innerHTML = '';
+
+    data.forEach(item => {
+
+        const div = document.createElement('div');
+        div.className = 'item';
+
+        div.innerHTML = `
+            <img src="${item.path}" alt="${item.judul}" loading="lazy">
+            <h3>${item.judul}</h3>
+            <div class="detail" id="detail-${item.id}"></div>
+        `;
+
+        div.addEventListener('click', () => showDetail(item.id));
+
+        grid.appendChild(div);
+    });
+}
+
+
+async function showDetail(id){
+
+    const detailDiv = document.getElementById(`detail-${id}`);
+
+    if(detailDiv.innerHTML !== ''){
+        detailDiv.style.display =
+            detailDiv.style.display === 'none' ? 'block' : 'none';
+        return;
+    }
+
+    const res = await fetch(`/api/get-detail?id=${id}`);
+    const data = await res.json();
+
+    detailDiv.innerHTML = `
+        <p><b>Pencipta:</b> ${data.pencipta}</p>
+        <p><b>Tahun:</b> ${data.tahun}</p>
+        <p><b>Harga:</b> Rp${data.harga.toLocaleString()}</p>
+    `;
+
+    detailDiv.style.display = 'block';
+}
+
+
+async function loadFortunes(){
+
+    const edgeRes = await fetch('/api/fortune-edge');
+    const edgeData = await edgeRes.json();
+
+    document.getElementById('fortune-edge').innerText =
+        `${edgeData.source}: ${edgeData.fortune} (${new Date(edgeData.timestamp).toLocaleTimeString()})`;
+
+    const backendRes = await fetch('/api/fortune');
+    const backendData = await backendRes.json();
+
+    document.getElementById('fortune-backend').innerText =
+        `${backendData.source}: ${backendData.fortune}`;
+}
+
+loadKatalog();
+loadFortunes();
+
+</script>
+
+</body>
+</html>

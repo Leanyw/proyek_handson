@@ -11,9 +11,7 @@ await redis.connect();
 
 export default async function handler(req, res) {
   const { id } = req.query;
-  if (!id) {
-    return res.status(400).json({ error: 'Parameter id diperlukan' });
-  }
+  if (!id) return res.status(400).json({ error: 'Parameter id diperlukan' });
 
   const cacheKey = `koleksi:detail:${id}`;
 
@@ -21,12 +19,13 @@ export default async function handler(req, res) {
     // Cek Redis
     const cached = await redis.get(cacheKey);
     if (cached) {
-      console.log('Cache hit for detail', id);
+      console.log(`🚀 Redis HIT untuk detail ${id}`);
+      res.setHeader('X-Cache', 'HIT');
       return res.status(200).json(JSON.parse(cached));
     }
 
     // Ambil dari Supabase
-    console.log('Cache miss for detail', id);
+    console.log(`❌ Redis MISS untuk detail ${id}`);
     const { data, error } = await supabase
       .from('koleksi')
       .select('judul, pencipta, tahun, harga')
@@ -38,6 +37,7 @@ export default async function handler(req, res) {
     // Simpan ke Redis dengan TTL 60 detik
     await redis.set(cacheKey, JSON.stringify(data), { EX: 60 });
 
+    res.setHeader('X-Cache', 'MISS');
     res.status(200).json(data);
   } catch (err) {
     console.error(err);
