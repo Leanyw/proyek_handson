@@ -28,7 +28,7 @@ export default async function handler(req, res) {
     console.log('❌ Redis MISS - mengambil dari Supabase');
     const { data, error } = await supabase
       .from('koleksi')
-      .select('id, judul, path') // hanya ambil yang diperlukan
+      .select('id, judul, path')
       .order('id');
 
     if (error) throw error;
